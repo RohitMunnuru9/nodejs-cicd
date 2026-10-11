@@ -1,0 +1,74 @@
+
+pipeline {
+    agent any
+
+    options {
+        disableConcurrentBuilds()
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Verify Tools') {
+            steps {
+                bat 'node -v'
+                bat 'npm -v'
+                bat 'git --version'
+                bat 'pm2 --version'
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                bat 'npm ci'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                bat 'npm test'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                bat '''
+                    if not exist C:\\nodejs-deploy mkdir C:\\nodejs-deploy
+
+                    robocopy "%WORKSPACE%" "C:\\nodejs-deploy" /E /XD node_modules .git .gitignore /XF Jenkinsfile
+                    if %ERRORLEVEL% GEQ 8 exit /b %ERRORLEVEL%
+
+                    cd /d C:\\nodejs-deploy
+                    call npm ci --omit=dev
+
+                    pm2 describe nodejs-cicd >nul 2>&1
+                    if errorlevel 1 (
+                        pm2 start app.js --name nodejs-cicd
+                    ) else (
+                        pm2 restart nodejs-cicd --update-env
+                    )
+                '''
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                bat 'curl.exe --fail http://127.0.0.1:3000/health'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'CI/CD pipeline completed successfully!'
+        }
+
+        failure {
+            echo 'Pipeline failed. Check console output.'
+        }
+    }
+}
