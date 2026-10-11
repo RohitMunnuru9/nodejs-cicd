@@ -5,7 +5,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.get("/", (req, res) => {
-    res.send("Hello! Node.js deployed using Jenkins CI/CD.");
+    res.send("hii this is jenkins lab.");
 });
 
 app.get("/health", (req, res) => {
