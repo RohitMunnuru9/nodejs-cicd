@@ -15,7 +15,7 @@ test("GET / returns expected message", async () => {
         assert.equal(response.status, 200);
 
         const body = await response.text();
-        assert.match(body, /Jenkins CI\/CD/);
+       assert.equal(body, "hii this is jenkins lab.");
     } finally {
         await new Promise((resolve, reject) => {
             server.close(err => err ? reject(err) : resolve());
